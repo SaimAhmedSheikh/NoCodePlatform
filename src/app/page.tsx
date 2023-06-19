@@ -4,7 +4,7 @@ import { addData, getMyProjects, getProject, updateProjectComponents } from '@/f
 import { ComponentType, ProjectType } from '@/models/Types';
 import { Button, Spinner, Toast } from 'flowbite-react';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { HTMLAttributes, ReactNode, useEffect, useState } from 'react';
 
 const IMPORT_STATEMENTS = {
   image: "import Image from 'next/image';",
@@ -115,6 +115,22 @@ export default function Home() {
       setLoading(false)
     })()
   }, []);
+
+  const renderComponents = (projectComponents: ComponentType<any>[]) => {
+    return projectComponents.map(item => {
+      if (item.elementType.toLowerCase() === 'h1') {
+        return <h1 key={item.componentId} className={item.className}>{item.data}</h1>
+      } else if (item.elementType.toLowerCase() === 'p') {
+        return <p key={item.componentId} className={item.className}>{item.data}</p>
+      } else if (item.elementType.toLowerCase() === 'button') {
+        return <Button key={item.componentId} className={item.className}>{item.data}</Button>
+      } else if (item.elementType.toLowerCase() === 'image') {
+        return <Image key={item.componentId} src={'${url}'} alt='no image' width={100} height={100} className='mb-4 mt-4' />
+      } else {
+        return
+      }
+    });
+  }
 
   if(loading) 
     return <div className='w-full h-screen flex justify-center items-center'>
