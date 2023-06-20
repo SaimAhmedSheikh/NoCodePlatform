@@ -11,8 +11,8 @@ const IMPORT_STATEMENTS = {
   button: "import { Button } from 'flowbite-react';"
 }
 const JSX_ELEMENTS = {
-  heading: (text?: string) => `<h1 className='text-xl font-bold mb-4 mt-4'>${text}</h1>`,
-  paragraph: (text?: string) => `<p className='mb-4 mt-4'>${text}</p>`,
+  heading: (text?: string, className?: string) => `<h1 className='${className}'>${text}</h1>`,
+  paragraph: (text?: string) => `<p>${text}</p>`,
   button: (text?: string) => `<Button className='mb-4 mt-4'>${text}</Button>`,
   image: (url?: string) => `<Image src={'${url}'} alt='no image' width={100} height={100} className='mb-4 mt-4' />`,
 }
@@ -21,7 +21,7 @@ const MY_PROJECT_ID = 'project-id';
 export default function Home() {
 
   const [project, setProject] = useState<ProjectType>();
-  const [projectComponents, setProjectComponents] = useState<ComponentType<any>[]>([]);
+  const [projectComponents, setProjectComponents] = useState<ComponentType[]>([]);
   const [reactNodes, setReactNodes] = useState<any[]>([]);
   const [elements, setElements] = useState<string[]>([]);
   const [imports, setImports] = useState<string[]>([]);
@@ -49,13 +49,14 @@ export default function Home() {
     let newElement = <h1 className='text-xl	font-bold mb-4 mt-4'>{text}</h1>;
     setReactNodes(prev => [ ...prev, newElement ])
     setElements(prev => [ ...prev, JSX_ELEMENTS['heading'](text || '') ])
-    let heading: ComponentType<'h1'> = {
+    let heading: ComponentType = {
       componentId: `${Math.random() * 100000}`,
       className: 'text-xl	font-bold',
       data: text,
       elementType: 'h1'
     }
     let components = [ ...projectComponents, heading ]
+    setProjectComponents(components);
     updateProjectComponents(MY_PROJECT_ID, components)
   }
   const onAddParagraph = () => {
@@ -65,7 +66,13 @@ export default function Home() {
     let newElement = <p className='mb-4 mt-4'>{text}</p>;
     setReactNodes(prev => [ ...prev, newElement ])
     setElements(prev => [ ...prev, JSX_ELEMENTS['paragraph'](text || '') ])
-    let components = [ ...reactNodes, newElement ]
+    let paragraph: ComponentType = {
+      componentId: `${Math.random() * 100000}`,
+      data: text,
+      elementType: 'p'
+    } 
+    let components = [ ...projectComponents, paragraph ]
+    setProjectComponents(components);
     updateProjectComponents(MY_PROJECT_ID, components)
 
   }
@@ -78,7 +85,13 @@ export default function Home() {
     setElements(prev => [ ...prev, JSX_ELEMENTS['button'](text || '') ])
     if(imports.indexOf(IMPORT_STATEMENTS['button']) === -1)
       setImports(prev => [ ...prev, IMPORT_STATEMENTS['button'] ])
-    let components = [ ...reactNodes, newElement ]
+    let button: ComponentType = {
+      componentId: `${Math.random() * 100000}`,
+      data: text,
+      elementType: 'button'
+    } 
+    let components = [ ...projectComponents, button ]
+    setProjectComponents(components);
     updateProjectComponents(MY_PROJECT_ID, components)
   
   }
@@ -91,7 +104,13 @@ export default function Home() {
     setElements(prev => [ ...prev, JSX_ELEMENTS['image'](url || '') ])
     if(imports.indexOf(IMPORT_STATEMENTS['image']) === -1)
       setImports(prev => [ ...prev, IMPORT_STATEMENTS['image'] ])
-    let components = [ ...reactNodes, newElement ]
+    let image: ComponentType = {
+      componentId: `${Math.random() * 100000}`,
+      data: url,
+      elementType: 'image'
+    } 
+    let components = [ ...projectComponents, image ]
+    setProjectComponents(components);
     updateProjectComponents(MY_PROJECT_ID, components)
   }
   console.log('elements: ', elements);
@@ -103,7 +122,7 @@ export default function Home() {
       if(project) {
         setProject(project)
         try {
-          let components: ComponentType<any>[] = []
+          let components: ComponentType[] = []
           project.components.map(comp => {
             components.push(comp)
           })
@@ -116,16 +135,16 @@ export default function Home() {
     })()
   }, []);
 
-  const renderComponents = (projectComponents: ComponentType<any>[]) => {
-    return projectComponents.map(item => {
+  const renderComponents = (projectComponents: ComponentType[]) => {
+    return projectComponents.map((item: ComponentType) => {
       if (item.elementType.toLowerCase() === 'h1') {
-        return <h1 key={item.componentId} className={item.className}>{item.data}</h1>
+        return <h1 key={item.componentId} className={item.className} {...item.props}>{item.data}</h1>
       } else if (item.elementType.toLowerCase() === 'p') {
-        return <p key={item.componentId} className={item.className}>{item.data}</p>
+        return <p key={item.componentId} className={item.className} {...item.props}>{item.data}</p>
       } else if (item.elementType.toLowerCase() === 'button') {
-        return <Button key={item.componentId} className={item.className}>{item.data}</Button>
+        return <Button key={item.componentId} className={item.className} {...item.props}>{item.data}</Button>
       } else if (item.elementType.toLowerCase() === 'image') {
-        return <Image key={item.componentId} src={'${url}'} alt='no image' width={100} height={100} className='mb-4 mt-4' />
+        return <Image key={item.componentId} src={item.data} alt='no image' width={200} height={200} className={item.className} {...item.props}  />
       } else {
         return
       }
