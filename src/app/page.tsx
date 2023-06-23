@@ -1,13 +1,17 @@
 "use client";
 import CodePreview from "@/components/CodePreview";
+import EditComponent from "@/components/EditComponent";
 import Wrapper from "@/components/Wrapper";
 import {
+  addComponent,
   addData,
   getMyProjects,
   getProject,
+  updateComponent,
   updateProjectComponents,
 } from "@/firebase/firestore";
 import { ComponentType, ProjectType } from "@/models/Types";
+import { createCustomId } from "@/utils/helpers";
 import { Button, Spinner, Toast } from "flowbite-react";
 import Image from "next/image";
 import { HTMLAttributes, ReactNode, useEffect, useState } from "react";
@@ -60,14 +64,15 @@ export default function Home() {
     setReactNodes((prev) => [...prev, newElement]);
     setElements((prev) => [...prev, JSX_ELEMENTS["heading"](text || "")]);
     let heading: ComponentType = {
-      componentId: `${Math.random() * 100000}`,
+      componentId: createCustomId(),
       className: "text-xl	font-bold",
       data: text,
       elementType: "h1",
     };
     let components = [...projectComponents, heading];
     setProjectComponents(components);
-    updateProjectComponents(MY_PROJECT_ID, components);
+    // updateProjectComponents(MY_PROJECT_ID, components);
+    addComponent(MY_PROJECT_ID, heading);
   };
   const onAddParagraph = () => {
     let text: string | null;
@@ -77,14 +82,15 @@ export default function Home() {
     setReactNodes((prev) => [...prev, newElement]);
     setElements((prev) => [...prev, JSX_ELEMENTS["paragraph"](text || "")]);
     let paragraph: ComponentType = {
-      componentId: `${Math.random() * 100000}`,
+      componentId: createCustomId(),
       data: text,
       className: "",
       elementType: "p",
     };
     let components = [...projectComponents, paragraph];
     setProjectComponents(components);
-    updateProjectComponents(MY_PROJECT_ID, components);
+    // updateProjectComponents(MY_PROJECT_ID, components);
+    addComponent(MY_PROJECT_ID, paragraph);
   };
   const onAddButton = () => {
     let text: string | null;
@@ -96,14 +102,15 @@ export default function Home() {
     if (imports.indexOf(IMPORT_STATEMENTS["button"]) === -1)
       setImports((prev) => [...prev, IMPORT_STATEMENTS["button"]]);
     let button: ComponentType = {
-      componentId: `${Math.random() * 100000}`,
+      componentId: createCustomId(),
       data: text,
       className: "",
       elementType: "button",
     };
     let components = [...projectComponents, button];
     setProjectComponents(components);
-    updateProjectComponents(MY_PROJECT_ID, components);
+    // updateProjectComponents(MY_PROJECT_ID, components);
+    addComponent(MY_PROJECT_ID, button);
   };
   const onAddImage = () => {
     let url: string | null;
@@ -123,13 +130,14 @@ export default function Home() {
     if (imports.indexOf(IMPORT_STATEMENTS["image"]) === -1)
       setImports((prev) => [...prev, IMPORT_STATEMENTS["image"]]);
     let image: ComponentType = {
-      componentId: `${Math.random() * 100000}`,
+      componentId: createCustomId(),
       data: url,
       elementType: "image",
     };
     let components = [...projectComponents, image];
     setProjectComponents(components);
-    updateProjectComponents(MY_PROJECT_ID, components);
+    // updateProjectComponents(MY_PROJECT_ID, components);
+    addComponent(MY_PROJECT_ID, image);
   };
   console.log("elements: ", elements);
 
@@ -138,6 +146,7 @@ export default function Home() {
       const res = await getProject(MY_PROJECT_ID);
       let project = res.success as ProjectType;
       if (project) {
+        console.log("project in api", project);
         setProject(project);
         try {
           let components: ComponentType[] = [];
@@ -158,7 +167,21 @@ export default function Home() {
     setSelectedComponent(component);
   };
 
+  const getComponent = (projectId: string, component: any) => {
+    updateComponent(projectId, component);
+  };
+
   console.log("selectedComponent", selectedComponent);
+
+  console.log("projectComponents", projectComponents);
+
+  const handleUpdateComponent = async (
+    selectedComponent: ComponentType | undefined
+  ) => {
+    if (selectedComponent) {
+      await updateComponent(MY_PROJECT_ID, selectedComponent);
+    }
+  };
 
   const renderComponents = (projectComponents: ComponentType[]) => {
     return projectComponents.map((item: ComponentType) => {
@@ -242,9 +265,24 @@ export default function Home() {
       </div>
       {project?.projectId ? (
         <div className="flex bg-white w-full min-h-screen rounded drop-shadow-lg ">
-          <div className="w-2/4 h-full bg-gray p-10">
-            {renderComponents(projectComponents)}
+          <div>
+            <div className="w-2/4 h-full bg-gray p-10">
+              {renderComponents(projectComponents)}
+            </div>
+            <button
+              onClick={async (e) =>
+                await handleUpdateComponent(selectedComponent)
+              }
+            >
+              Save the code
+            </button>
           </div>
+          {/* {selectedComponent ? (
+            <EditComponent
+              selectedComponent={selectedComponent}
+              setSelectedComponent={setSelectedComponent}
+            />
+          ) : null} */}
           {/* <CodePreview elements={elements} imports={imports} /> */}
         </div>
       ) : (
