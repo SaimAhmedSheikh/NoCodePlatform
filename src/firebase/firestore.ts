@@ -150,8 +150,11 @@ export const updateComponent = async (
     const docRef = doc(db, `projects/${projectId}/components/${component.id}`);
     await updateDoc(docRef, component);
 
+    const updatedDoc = await getDoc(docRef);
+
     return {
       success: true,
+      detail: { id: updatedDoc.id, ...updatedDoc.data() },
     };
   } catch (error) {
     return {

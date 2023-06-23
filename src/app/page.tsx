@@ -179,7 +179,20 @@ export default function Home() {
     selectedComponent: ComponentType | undefined
   ) => {
     if (selectedComponent) {
-      await updateComponent(MY_PROJECT_ID, selectedComponent);
+      const updatedData = await updateComponent(
+        MY_PROJECT_ID,
+        selectedComponent
+      );
+      console.log("updateComponent", updatedData.detail);
+      setProjectComponents((prev) =>
+        prev.map((item) => {
+          if (item.componentId === updatedData.detail.componentId) {
+            return updatedData.detail;
+          } else {
+            return item;
+          }
+        })
+      );
     }
   };
 
@@ -191,7 +204,14 @@ export default function Home() {
             key={item.componentId}
             onClick={() => onClickComponent(item.componentId)}
           >
-            <h1 className={item.className} {...item.props}>
+            <h1
+              className={`${item.className} ${
+                selectedComponent?.componentId === item.componentId
+                  ? "border-2 border-red-500"
+                  : "border-transparent"
+              }`}
+              {...item.props}
+            >
               {item.data}
             </h1>
           </Wrapper>
@@ -204,7 +224,11 @@ export default function Home() {
           >
             <p
               key={item.componentId}
-              className={item.className}
+              className={`${item.className} ${
+                selectedComponent?.componentId === item.componentId
+                  ? "border-2 border-red-500"
+                  : "border-transparent"
+              }`}
               {...item.props}
             >
               {item.data}
@@ -219,7 +243,11 @@ export default function Home() {
           >
             <Button
               key={item.componentId}
-              className={item.className}
+              className={`${item.className} ${
+                selectedComponent?.componentId === item.componentId
+                  ? "border-2 border-red-500"
+                  : "border-transparent"
+              }`}
               {...item.props}
             >
               {item.data}
@@ -238,7 +266,11 @@ export default function Home() {
               alt="no image"
               width={200}
               height={200}
-              className={item.className}
+              className={`${item.className} ${
+                selectedComponent?.componentId === item.componentId
+                  ? "border-2 border-red-500"
+                  : "border-transparent"
+              }`}
               {...item.props}
             />
           </Wrapper>
@@ -266,23 +298,17 @@ export default function Home() {
       {project?.projectId ? (
         <div className="flex bg-white w-full min-h-screen rounded drop-shadow-lg ">
           <div>
-            <div className="w-2/4 h-full bg-gray p-10">
+            <div className="h-full bg-gray p-10">
               {renderComponents(projectComponents)}
             </div>
-            <button
-              onClick={async (e) =>
-                await handleUpdateComponent(selectedComponent)
-              }
-            >
-              Save the code
-            </button>
           </div>
-          {/* {selectedComponent ? (
+          {selectedComponent ? (
             <EditComponent
               selectedComponent={selectedComponent}
               setSelectedComponent={setSelectedComponent}
+              handleUpdateComponent={handleUpdateComponent}
             />
-          ) : null} */}
+          ) : null}
           {/* <CodePreview elements={elements} imports={imports} /> */}
         </div>
       ) : (
