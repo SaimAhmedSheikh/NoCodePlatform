@@ -1,5 +1,6 @@
 import { ComponentType } from "@/models/Types";
 import { Dispatch, SetStateAction } from "react";
+import Tabs from "./Tabs";
 
 interface EditComponentProps {
   selectedComponent: ComponentType | undefined;
@@ -15,8 +16,30 @@ const EditComponent = ({
   handleUpdateComponent,
 }: EditComponentProps) => {
   return (
-    <div className="flex-1 h-full min-h-screen bg-gray-300 text-white p-10	o">
-      <div className="flex">
+    <div className="flex-1 h-full min-h-screen bg-gray-300 text-white">
+      <Tabs />
+
+      <div className="flex px-10">
+        <label id="text" className="text-black mr-2">
+          Title
+        </label>
+        <input
+          name="text"
+          className="text-black"
+          value={selectedComponent?.data}
+          onChange={(e) =>
+            setSelectedComponent(
+              (prev) =>
+                ({
+                  ...prev,
+                  data: e.target.value,
+                } as ComponentType)
+            )
+          }
+        />
+      </div>
+
+      <div className="flex px-10">
         <label id="classNames" className="text-black mr-2">
           Classes
         </label>
@@ -35,24 +58,28 @@ const EditComponent = ({
           }
         />
       </div>
-      <div className="flex">
-        <label id="text" className="text-black mr-2">
-          Text
-        </label>
-        <input
-          name="text"
-          className="text-black"
-          value={selectedComponent?.data}
-          onChange={(e) =>
-            setSelectedComponent(
-              (prev) =>
-                ({
-                  ...prev,
-                  data: e.target.value,
-                } as ComponentType)
-            )
-          }
-        />
+
+      <div>
+        <p className="text-black px-10 text-base font-semibold mt-2">Padding</p>
+        <div className="flex px-10">
+          <label id="paddingTop" className="text-black mr-2">
+            Top
+          </label>
+          <input
+            name="padding"
+            className="text-black"
+            value={selectedComponent?.className}
+            onChange={(e) =>
+              setSelectedComponent(
+                (prev) =>
+                  ({
+                    ...prev,
+                    className: e.target.value,
+                  } as ComponentType)
+              )
+            }
+          />
+        </div>
       </div>
 
       <button
