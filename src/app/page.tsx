@@ -171,10 +171,6 @@ export default function Home() {
     updateComponent(projectId, component);
   };
 
-  console.log("selectedComponent", selectedComponent);
-
-  console.log("projectComponents", projectComponents);
-
   const handleUpdateComponent = async (
     selectedComponent: ComponentType | undefined
   ) => {
@@ -203,14 +199,11 @@ export default function Home() {
           <Wrapper
             key={item.componentId}
             onClick={() => onClickComponent(item.componentId)}
+            selected={selectedComponent?.componentId === item.componentId}
           >
             <h1
-              className={`${item.className} ${
-                selectedComponent?.componentId === item.componentId
-                  ? "border-2 border-red-500"
-                  : "border-transparent"
-              }`}
-              {...item.props}
+              className={`${item.className}`}
+              style={{...item.props}}
             >
               {item.data}
             </h1>
@@ -221,15 +214,12 @@ export default function Home() {
           <Wrapper
             key={item.componentId}
             onClick={() => onClickComponent(item.componentId)}
+            selected={selectedComponent?.componentId === item.componentId}
           >
             <p
               key={item.componentId}
-              className={`${item.className} ${
-                selectedComponent?.componentId === item.componentId
-                  ? "border-2 border-red-500"
-                  : "border-transparent"
-              }`}
-              {...item.props}
+              className={`${item.className}`}
+              style={{...item.props}}
             >
               {item.data}
             </p>
@@ -240,15 +230,12 @@ export default function Home() {
           <Wrapper
             key={item.componentId}
             onClick={() => onClickComponent(item.componentId)}
-          >
+            selected={selectedComponent?.componentId === item.componentId}
+            >
             <Button
               key={item.componentId}
-              className={`${item.className} ${
-                selectedComponent?.componentId === item.componentId
-                  ? "border-2 border-red-500"
-                  : "border-transparent"
-              }`}
-              {...item.props}
+              className={`${item.className}`}
+              style={{...item.props}}
             >
               {item.data}
             </Button>
@@ -259,6 +246,7 @@ export default function Home() {
           <Wrapper
             key={item.componentId}
             onClick={() => onClickComponent(item.componentId)}
+            selected={selectedComponent?.componentId === item.componentId}
           >
             <Image
               key={item.componentId}
@@ -266,12 +254,8 @@ export default function Home() {
               alt="no image"
               width={200}
               height={200}
-              className={`${item.className} ${
-                selectedComponent?.componentId === item.componentId
-                  ? "border-2 border-red-500"
-                  : "border-transparent"
-              }`}
-              {...item.props}
+              className={`${item.className}`}
+              style={{...item.props}}
             />
           </Wrapper>
         );
@@ -284,7 +268,7 @@ export default function Home() {
   if (loading)
     return (
       <div className="w-full h-screen flex justify-center items-center">
-        <Spinner size="xs" />
+        <Spinner size="lg" />
       </div>
     );
   return (
@@ -297,7 +281,7 @@ export default function Home() {
       </div>
       {project?.projectId ? (
         <div className="flex bg-white w-full min-h-screen rounded drop-shadow-lg ">
-          <div>
+          <div className="w-3/4">
             <div className="h-full bg-gray p-10">
               {renderComponents(projectComponents)}
             </div>

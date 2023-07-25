@@ -1,6 +1,8 @@
 import { ComponentType } from "@/models/Types";
 import { Dispatch, SetStateAction } from "react";
 import Tabs from "./Tabs";
+import { Button, Label, TextInput } from "flowbite-react";
+import ColorPicker from "./ColorPicker";
 
 interface EditComponentProps {
   selectedComponent: ComponentType | undefined;
@@ -15,79 +17,62 @@ const EditComponent = ({
   setSelectedComponent,
   handleUpdateComponent,
 }: EditComponentProps) => {
+
+  const update = (key: string, value: any) => {
+    const newComp: ComponentType = {
+      ...selectedComponent,
+      [key]: value,
+    } as ComponentType
+    setSelectedComponent(newComp)
+    handleUpdateComponent(newComp)
+  }
   return (
-    <div className="flex-1 h-full min-h-screen bg-gray-300 text-white">
-      <Tabs />
+    <div className="w-1/4 h-full min-h-screen bg-gray-100 p-4">
+      {/* <Tabs /> */}
+      <h2 className="font-bold text-lg mb-3">Properties</h2>
 
-      <div className="flex px-10">
-        <label id="text" className="text-black mr-2">
-          Title
-        </label>
-        <input
-          name="text"
-          className="text-black"
-          value={selectedComponent?.data}
-          onChange={(e) =>
-            setSelectedComponent(
-              (prev) =>
-                ({
-                  ...prev,
-                  data: e.target.value,
-                } as ComponentType)
-            )
-          }
-        />
-      </div>
+      <h3 className="font-bold text-base mb-2">Text</h3>
 
-      <div className="flex px-10">
-        <label id="classNames" className="text-black mr-2">
-          Classes
-        </label>
-        <input
-          name="classNames"
-          className="text-black"
-          value={selectedComponent?.className}
-          onChange={(e) =>
-            setSelectedComponent(
-              (prev) =>
-                ({
-                  ...prev,
-                  className: e.target.value,
-                } as ComponentType)
-            )
-          }
-        />
-      </div>
-
-      <div>
-        <p className="text-black px-10 text-base font-semibold mt-2">Padding</p>
-        <div className="flex px-10">
-          <label id="paddingTop" className="text-black mr-2">
-            Top
-          </label>
-          <input
-            name="padding"
-            className="text-black"
-            value={selectedComponent?.className}
-            onChange={(e) =>
-              setSelectedComponent(
-                (prev) =>
-                  ({
-                    ...prev,
-                    className: e.target.value,
-                  } as ComponentType)
-              )
-            }
+      <form className="flex max-w-md flex-col gap-4">
+        <div>
+          <div className="mb-2 block">
+            <Label
+              htmlFor="value"
+              value="Value"
+              className="text-gray-600"
+            />
+          </div>
+          <TextInput
+            id="value"
+            placeholder="Enter here"
+            required
+            type="text"
+            value={selectedComponent?.data}
+            onChange={(e) =>{
+              update('data', e.target.value)
+            }}
           />
         </div>
-      </div>
+        <div>
+          <div className="mb-2 block">
+            <Label
+              htmlFor="textColor"
+              value="Color"
+              className="text-gray-600"
+            />
+          </div>
+          <ColorPicker 
+            value={selectedComponent?.props?.color}
+            onPickColor={(color) => {
+              update('props', {
+                color: color.hex
+              })
+            }
+          }
+          />
+        </div>
+      </form>
 
-      <button
-        className="text-white p-2 bg-black mt-2"
-        onClick={async (e) => await handleUpdateComponent(selectedComponent)}
-      >
-        Save the code
-      </button>
     </div>
   );
 };
