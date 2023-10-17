@@ -6,8 +6,10 @@ import { IComponent } from "@/interfaces/IComponent";
 import { IElement } from "@/interfaces/IElements";
 import { IPageCode } from "@/interfaces/IPageCode";
 import { IProject } from "@/interfaces/IProject";
-import { IUser } from "@/interfaces/IUser";
+import { ISession, ISessionUser } from "@/interfaces/ISessionUser";
+import { IUser, UserRoles } from "@/interfaces/IUser";
 import socket from "@/sockets/socket";
+import LocalStorage from "@/utils/LocalStorage";
 import { createCustomId } from "@/utils/helpers";
 import { Button, Spinner, Toast } from "flowbite-react";
 import Image from "next/image";
@@ -29,6 +31,7 @@ const MY_PROJECT_ID = "project-id";
 
 export default function Home() {
   const [user, setUser] = useState<IUser>();
+  const [isLoading, setIsLoading] = useState(true);
   const [pageCode, setPageCode] = useState<IPageCode>({
     _id: "page-id",
     name: "Home Page",
@@ -40,22 +43,54 @@ export default function Home() {
   const [selectedComponent, setSelectedComponent] = useState<IComponent>();
 
   useEffect(() => {
-    fetchUser();
+    socket.on("connect_error", (err) => {
+      if (err.message === "Invalid User") {
+        setUser(undefined);
+        setIsLoading(false)
+      }
+    });
+    socket.on("session:add", (session: ISession) => {
+      // attach the session ID to the next reconnection attempts
+      const { sessionId, user } = session
+      socket.auth = { sessionId, user };
+      // store it in the localStorage
+      LocalStorage.storeData("sessionId", sessionId);
+      LocalStorage.storeData("user", user);
+    });
+    return () => {
+      socket.off("connect_error");
+      socket.off("session:add");
+    };
+
   }, []);
 
-  const fetchUser = async () => {
-    const res = await fetch('https://randomuser.me/api/');
-    const data = await res.json();
-    const user: IUser = {
-      _id: data.results[0].login.uuid,
-      name: data.results[0].name.first + ' ' + data.results[0].name.last,
-      email: data.results[0].email,
-    };
-    setUser(user);
-    socket.auth = { user };
-    socket.connect();
+  useEffect(() => {
+    fetchUserSession();
+  }, []);
 
+  const fetchUserSession = async () => {
+    let user = LocalStorage.getData("user") as ISessionUser;
+    let sessionId = LocalStorage.getData("sessionId")
+    if(!sessionId && !user) {
+      const res = await fetch('https://randomuser.me/api/');
+      const data = await res.json();
+      if(data.results[0])
+        user = {
+          _id: data.results[0].login.uuid,
+          name: data.results[0].name.first + ' ' + data.results[0].name.last,
+          email: data.results[0].email,
+          role: UserRoles.Standard
+        };
+    }
+    if(sessionId) {
+      socket.auth = { sessionId };
+    }
+    socket.auth = { user };
+    setUser(user);
+    socket.connect();
+    setIsLoading(false)
   }
+
   const onAddHeadding = () => {
     let text: string | null;
     text = prompt("Enter heading text", "");
@@ -150,19 +185,8 @@ export default function Home() {
       codeJson: components,
     };
     if(user)
-    socket.emit("updatePageCode", updatePageCode, user);
+    socket.emit("pageCode:update", updatePageCode, user);
   };
-
-  useEffect(() => {
-    socket.on("connect_error", (err) => {
-      if (err.message === "Invalid User") {
-        fetchUser();
-      }
-    });
-    return () => {
-      socket.off("connect_error");
-    };
-  }, []);
 
   const renderComponents = (projectComponents: IComponent[]) => {
     return projectComponents.map((item: IComponent) => {
@@ -237,8 +261,17 @@ export default function Home() {
     });
   };
 
+  if(isLoading)
+    return (
+      <div className="w-full h-screen flex justify-center items-center">
+        <Spinner size="lg"/>
+      </div>
+      )
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-16">
+      <div className="w-full mb-12 ">
+        <h1 className="font-lg">Hi, <strong>{user?.name || "Guest"}</strong></h1>
+      </div>
       <div className="flex justify-between w-full mb-12 ">
         <Button onClick={onAddHeadding}>Add Heading</Button>
         <Button onClick={onAddParagraph}>Add Paragraph</Button>
