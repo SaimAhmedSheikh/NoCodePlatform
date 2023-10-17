@@ -1,15 +1,15 @@
-import { ComponentType } from "@/models/Types";
 import { Dispatch, SetStateAction } from "react";
 import Tabs from "./Tabs";
 import { Button, Label, TextInput } from "flowbite-react";
 import ColorPicker from "./ColorPicker";
+import { IComponent } from "@/interfaces/IComponent";
 
 interface EditComponentProps {
-  selectedComponent: ComponentType | undefined;
-  setSelectedComponent: Dispatch<SetStateAction<ComponentType | undefined>>;
+  selectedComponent: IComponent | undefined;
+  setSelectedComponent: Dispatch<SetStateAction<IComponent | undefined>>;
   handleUpdateComponent(
-    selectedComponent: ComponentType | undefined
-  ): Promise<void>;
+    selectedComponent: IComponent | undefined
+  ): void;
 }
 
 const EditComponent = ({
@@ -19,10 +19,10 @@ const EditComponent = ({
 }: EditComponentProps) => {
 
   const update = (key: string, value: any) => {
-    const newComp: ComponentType = {
+    const newComp: IComponent = {
       ...selectedComponent,
       [key]: value,
-    } as ComponentType
+    } as IComponent
     setSelectedComponent(newComp)
     handleUpdateComponent(newComp)
   }
