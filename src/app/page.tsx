@@ -85,7 +85,7 @@ export default function Home() {
     if(sessionId) {
       socket.auth = { sessionId };
     }
-    socket.auth = { user };
+    else socket.auth = { user };
     setUser(user);
     socket.connect();
     setIsLoading(false)
