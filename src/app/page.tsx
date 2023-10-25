@@ -9,11 +9,11 @@ import { IProject } from "@/interfaces/IProject";
 import { ISession, ISessionUser } from "@/interfaces/ISessionUser";
 import { IUser, UserRoles } from "@/interfaces/IUser";
 import socket from "@/sockets/socket";
-import LocalStorage from "@/utils/LocalStorage";
+import SessionStorage from "@/utils/SessionStorage";
 import { createCustomId } from "@/utils/helpers";
 import { Button, Spinner, Toast } from "flowbite-react";
 import Image from "next/image";
-import { HTMLAttributes, ReactNode, use, useEffect, useState } from "react";
+import {  useEffect, useState } from "react";
 
 // const IMPORT_STATEMENTS = {
 //   image: "import Image from 'next/image';",
@@ -31,6 +31,7 @@ const MY_PROJECT_ID = "project-id";
 
 export default function Home() {
   const [user, setUser] = useState<IUser>();
+  const [onlineUsers, setOnlineUsers] = useState<ISessionUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pageCode, setPageCode] = useState<IPageCode>({
     _id: "page-id",
@@ -42,8 +43,15 @@ export default function Home() {
   const [projectComponents, setProjectComponents] = useState<IComponent[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<IComponent>();
 
+  // Socket event listeners
+
   useEffect(() => {
+    socket.on("connect", () => {
+      socket.emit("user:join", MY_PROJECT_ID);
+    });
     socket.on("connect_error", (err) => {
+      console.log({err});
+      
       if (err.message === "Invalid User") {
         setUser(undefined);
         setIsLoading(false)
@@ -53,15 +61,46 @@ export default function Home() {
       // attach the session ID to the next reconnection attempts
       const { sessionId, user } = session
       socket.auth = { sessionId, user };
-      // store it in the localStorage
-      LocalStorage.storeData("sessionId", sessionId);
-      LocalStorage.storeData("user", user);
+      // store it in the SessionStorage
+      SessionStorage.storeData("sessionId", sessionId);
+      SessionStorage.storeData("user", user);
+    });
+    socket.on("user:list", (users: ISessionUser[]) => {
+      console.log({users});
+      setOnlineUsers(users);    
+    });
+    socket.on("user:join", (user: ISessionUser) => {
+      if(onlineUsers.findIndex(u => u._id === user._id) === -1)
+        setOnlineUsers([...onlineUsers, user ]);    
+    });
+    socket.on("pageCode:add", (pageCode: IPageCode) => {
+      console.log({pageCode});
+      
+      if (pageCode.codeJson && "components" in pageCode.codeJson) {
+        const components = pageCode.codeJson.components;
+        if(Array.isArray(components))
+          setProjectComponents(components);
+      }
+    });
+    socket.on("pageCode:update", (pageCode: IPageCode, updatedBy: IUser) => {
+      if (pageCode.codeJson && "components" in pageCode.codeJson) {
+        const components = pageCode.codeJson.components;
+        if(Array.isArray(components) && updatedBy._id !== user?._id)
+          setProjectComponents(components);
+      }
+    });
+    socket.on("user:leave", (userId: string) => {
+      setOnlineUsers((users) => users.filter((u) => u._id !== userId));
     });
     return () => {
+      socket.off("connect");
       socket.off("connect_error");
       socket.off("session:add");
+      socket.off("pageCode:update");
+      socket.off("pageCode:add");
+      socket.off("user:list");
+      socket.off("user:leave");
     };
-
   }, []);
 
   useEffect(() => {
@@ -69,10 +108,12 @@ export default function Home() {
   }, []);
 
   const fetchUserSession = async () => {
-    let user = LocalStorage.getData("user") as ISessionUser;
-    let sessionId = LocalStorage.getData("sessionId")
+    let user = SessionStorage.getData("user") as ISessionUser;
+    let sessionId = SessionStorage.getData("sessionId") as string;
+    console.log({user, sessionId});
+    
     if(!sessionId && !user) {
-      const res = await fetch('https://randomuser.me/api/');
+      const res = await fetch('https://randomuser.me/api/?nat=us');
       const data = await res.json();
       if(data.results[0])
         user = {
@@ -83,7 +124,7 @@ export default function Home() {
         };
     }
     if(sessionId) {
-      socket.auth = { sessionId };
+      socket.auth = { sessionId, user };
     }
     else socket.auth = { user };
     setUser(user);
@@ -104,7 +145,7 @@ export default function Home() {
     };
     let components = [...projectComponents, heading];
     setProjectComponents(components);
-    // updateProjectComponents(MY_PROJECT_ID, components);
+    handleUpdateComponents(components);
   };
   const onAddParagraph = () => {
     let text: string | null;
@@ -119,7 +160,7 @@ export default function Home() {
     };
     let components = [...projectComponents, paragraph];
     setProjectComponents(components);
-    // updateProjectComponents(MY_PROJECT_ID, components);
+    handleUpdateComponents(components);
   };
   const onAddButton = () => {
     let text: string | null;
@@ -133,7 +174,7 @@ export default function Home() {
     };
     let components = [...projectComponents, button];
     setProjectComponents(components);
-    // updateProjectComponents(MY_PROJECT_ID, components);
+    handleUpdateComponents(components);
   };
   const onAddImage = () => {
     let url: string | null;
@@ -155,7 +196,7 @@ export default function Home() {
     };
     let components = [...projectComponents, image];
     setProjectComponents(components);
-    // updateProjectComponents(MY_PROJECT_ID, components);
+    handleUpdateComponents(components);
   };
 
   const onClickComponent = (id: string) => {
@@ -182,10 +223,10 @@ export default function Home() {
   const handleUpdateComponents = (components: IComponent[]) => {
     const updatePageCode: IPageCode = {
       ...pageCode,
-      codeJson: components,
+      codeJson: {components},
     };
     if(user)
-    socket.emit("pageCode:update", updatePageCode, user);
+      socket.emit("pageCode:update", updatePageCode, user);
   };
 
   const renderComponents = (projectComponents: IComponent[]) => {
@@ -261,16 +302,22 @@ export default function Home() {
     });
   };
 
+  const otherUsers = onlineUsers.filter((u) => u._id !== user?._id);
+  console.log({otherUsers});
+  console.log({user});
+  
+  
   if(isLoading)
     return (
       <div className="w-full h-screen flex justify-center items-center">
         <Spinner size="lg"/>
       </div>
       )
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-16">
       <div className="w-full mb-12 ">
-        <h1 className="font-lg">Hi, <strong>{user?.name || "Guest"}</strong></h1>
+        <h1 className="font-lg">Hi, <strong>{user?.name || "Guest"}</strong> {`(${otherUsers.map(u => u.name).join(', ')})`} </h1>
       </div>
       <div className="flex justify-between w-full mb-12 ">
         <Button onClick={onAddHeadding}>Add Heading</Button>

@@ -1,4 +1,5 @@
 import React from "react";
+import { IUser } from "./IUser";
 
 export interface IComponent extends React.PropsWithChildren<{}> {
     _id: string;
@@ -8,4 +9,5 @@ export interface IComponent extends React.PropsWithChildren<{}> {
     props?: {
       [key: string]: any;
     };
+    updatedBy?: IUser;
   };
